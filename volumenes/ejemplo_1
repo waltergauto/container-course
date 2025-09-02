@@ -1,0 +1,51 @@
+### crear un volumen local
+podman volume create mysql-data 
+
+### ejecutar un contenedor de mysql con un volumen local
+podman run -d \
+--name mysql-server \
+-e MYSQL_ROOT_PASSWORD=secreto123 \
+-e MYSQL_DATABASE=empresa \
+-e MYSQL_USER=admin \
+-e MYSQL_PASSWORD=admin123 \
+-v mysql-data:/var/lib/mysql \
+-p 3306:3306 \
+mysql:8.0
+
+### poblar la base de datos
+podman exec -i mysql-server mysql -u admin -padmin123 empresa << 'EOF'
+CREATE TABLE empleados (
+id INT AUTO_INCREMENT PRIMARY KEY,
+nombre VARCHAR(100),
+departamento VARCHAR(50),
+salario DECIMAL(10,2),
+fecha_ingreso DATE
+);
+
+INSERT INTO empleados (nombre, departamento, salario, fecha_ingreso) VALUES
+('Ana García', 'IT', 75000.00, '2023-01-15'),
+('Carlos López', 'Ventas', 65000.00, '2023-02-20'),
+('María Rodríguez', 'IT', 80000.00, '2023-03-10'),
+('Juan Pérez', 'Marketing', 70000.00, '2023-04-05');
+
+SELECT 'Datos iniciales creados:' as status;
+SELECT * FROM empleados;
+EOF
+
+### eliminar el contenedor
+podman stop mysql-server
+podman rm mysql-server
+
+### ejecutar un nuevo contenedor con el mismo volumen
+podman run -d \
+--name mysql-server-new \
+-e MYSQL_ROOT_PASSWORD=secreto123 \
+-e MYSQL_DATABASE=empresa \
+-e MYSQL_USER=admin \
+-e MYSQL_PASSWORD=admin123 \
+-v mysql-data:/var/lib/mysql \
+-p 3306:3306 \
+mysql:8.0
+
+### consultar datos
+podman exec mysql-server-new mysql -u admin -padmin123 empresa -e "SELECT * FROM empleados;"
