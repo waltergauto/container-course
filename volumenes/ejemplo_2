@@ -1,0 +1,19 @@
+# Crear backup
+mkdir -p ~/backups
+podman exec mysql-server-new mysqldump -u admin -padmin123 empresa > ~/backups/empresa-backup.sql
+
+# Ver el backup
+head -20 ~/backups/empresa-backup.sql
+
+# Simular pérdida de datos (eliminar tabla)
+podman exec mysql-server-new mysql -u admin -padmin123 empresa -e "DROP TABLE empleados;"
+
+# Verificar que se perdió
+podman exec mysql-server-new mysql -u admin -padmin123 empresa -e "SHOW TABLES;" || echo "Tabla eliminada"
+
+# Restaurar desde backup
+podman exec -i mysql-server-new mysql -u admin -padmin123 empresa < ~/backups/empresa-backup.sql
+
+# Verificar restauración
+podman exec mysql-server-new mysql -u admin -padmin123 empresa -e "SELECT COUNT(*) as empleados_restaurados FROM empleados;"
+
